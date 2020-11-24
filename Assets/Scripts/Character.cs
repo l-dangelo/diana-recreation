@@ -4,8 +4,8 @@ using UnityEngine;
 
 public class Character : MonoBehaviour
 {
-    [SerializeField] protected float _health = 100;
-    [SerializeField] protected float _shieldHealth = 0;
+    [SerializeField] float _health = 375;
+    [SerializeField] float _shieldHealth = 0;
 
     public void SetHealth(float amount)
     {
@@ -39,6 +39,6 @@ public class Character : MonoBehaviour
 
     public void DealDamage(float amount, GameObject thingTakingDamage)
     {
-
+        thingTakingDamage.GetComponent<Character>().ChangeHealthByAmount(-amount);
     }
 }

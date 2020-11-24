@@ -6,27 +6,33 @@ public class Orbs : MonoBehaviour
 {
     [SerializeField] Character Diana = null;
     [SerializeField] WAbility wAbility = null;
+    [SerializeField] ParticleSystem particles = null;
+
+
+    private void Awake()
+    {
+        this.gameObject.SetActive(false);
+    }
+
+    private void OnEnable()
+    {
+        this.gameObject.GetComponent<MeshRenderer>().enabled = true;
+        this.gameObject.GetComponent<SphereCollider>().enabled = true;
+    }
 
     private void Update()
     {
-        transform.RotateAround(Diana.gameObject.transform.position, Diana.gameObject.transform.up, 100 * Time.deltaTime);
+        transform.RotateAround(Diana.gameObject.transform.position, Diana.gameObject.transform.up, 350 * Time.deltaTime);
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Enemy")) {
-            Diana.DealDamage(10, other.gameObject);
+        if (other.gameObject.CompareTag("Enemy")) {
+            wAbility.OrbDied(other.gameObject);
 
-            this.gameObject.GetComponent<ParticleSystem>().Play();
-
-            wAbility.wAbilityState += 1;
-
-            if (wAbility.wAbilityState == 4) {
-                wAbility.Feedback();
-                Diana.ChangeShieldHealthByAmount(30);
-            }
-
-            this.gameObject.SetActive(false);
+            particles.Play();
+            this.gameObject.GetComponent<MeshRenderer>().enabled = false;
+            this.gameObject.GetComponent<SphereCollider>().enabled = false;
         }
     }
 }

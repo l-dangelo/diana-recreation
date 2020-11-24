@@ -4,45 +4,53 @@ using UnityEngine;
 
 public class WAbility : MonoBehaviour
 {
-    /*
-     * Ability States:
-     * 0 = Not Active; Not affected by ability
-     * 1 = 3 Orbs left; Active
-     * 2 = 2 Orbs left; Active
-     * 3 = 1 Orb left; Active
-     * 4 = Big Shield; Active
-     * 5 = On Cooldown; Not affected by ability
-     */
-
-    [Header("W Ability State Images")]
+    [Header("W Ability State Feedback")]
     [SerializeField] GameObject orb1 = null;
     [SerializeField] GameObject orb2 = null;
     [SerializeField] GameObject orb3 = null;
     [SerializeField] GameObject BigShield = null;
 
+    [Header("UI")]
+    [SerializeField] GameObject wActiveHUD = null;
+    [SerializeField] HealthBar manaBar = null;
+    [SerializeField] Cooldown cooldown = null;
+
+    [Header("Audio")]
+    [SerializeField] AudioSource orbSound1 = null;
+    [SerializeField] AudioSource orbSound2 = null;
+    [SerializeField] AudioSource shieldSound = null;
+    [SerializeField] AudioSource endOfAbilitySound = null;
+
     [Header("Diana")]
     [SerializeField] Character Diana = null;
 
-    public int wAbilityState = 0;
-    bool DianaHasOrbs = false;
+    public enum wAS
+    {
+        NotActive,
+        ThreeOrbs,
+        TwoOrbs,
+        OneOrb,
+        BigShield,
+        OnCooldown
+    }
+
+    public wAS wAbilityState = wAS.NotActive;
 
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.W) && WAbleToActivate()) {
             StartCoroutine(PaleCascadeStart(Diana));
-            Feedback();
         }
     }
 
     public bool WAbleToActivate()
     {
-        if(wAbilityState == 0) {
+        if(wAbilityState == wAS.NotActive && !manaBar.IsEmpty()) {
             return true;
         }
         return false;
     }
 
-    // The Orbs and Shield on Diana, not the ability's cooldown
     IEnumerator PaleCascadeStart(Character _Diana)
     {
         PaleCascade();
@@ -50,15 +58,20 @@ public class WAbility : MonoBehaviour
         yield return new WaitForSeconds(5);
 
         StopCascading();
+
+        yield return new WaitForSeconds(7);
+
+        wAbilityState = wAS.NotActive;
     }
 
     void PaleCascade()
     {
-        DianaHasOrbs = true;
+        manaBar.GetComponent<HealthBar>().SetHealthBar(0.9f);
         Diana.ChangeShieldHealthByAmount(30);
-        wAbilityState += 1;
+        wAbilityState = wAS.ThreeOrbs;
+        wActiveHUD.SetActive(true);
 
-        Feedback();
+        ManageOrbs();
     }
 
     void StopCascading()
@@ -68,24 +81,55 @@ public class WAbility : MonoBehaviour
         orb3.SetActive(false);
         BigShield.SetActive(false);
 
-        wAbilityState = 0;
-        DianaHasOrbs = false;
+        wAbilityState = wAS.OnCooldown;
+
+        cooldown.gameObject.SetActive(true);
 
         Diana.SetShieldHealth(0);
+
+        endOfAbilitySound.Play();
     }
 
-    public void Feedback()
+    public void OrbDied(GameObject collider)
     {
-        if(wAbilityState == 1) {
+        switch (wAbilityState) {
+            case wAS.ThreeOrbs:
+                wAbilityState = wAS.TwoOrbs;
+                Diana.DealDamage(10, collider);
+                orbSound1.Play();
+                break;
+
+            case wAS.TwoOrbs:
+                wAbilityState = wAS.OneOrb;
+                Diana.DealDamage(10, collider);
+                orbSound2.Play();
+                break;
+
+            case wAS.OneOrb:
+                wAbilityState = wAS.BigShield;
+                Diana.DealDamage(10, collider);
+                shieldSound.Play();
+                ManageOrbs();
+                Diana.ChangeShieldHealthByAmount(30);
+                break;
+
+            default:
+                Debug.Log("OrbDied unexpected value  " + wAbilityState);
+                wAbilityState = wAS.OnCooldown;
+                break;
+        }
+    }
+
+    public void ManageOrbs()
+    {
+        if(wAbilityState == wAS.ThreeOrbs) {
             orb1.SetActive(true);
             orb2.SetActive(true);
             orb3.SetActive(true);
         }
 
-        if(wAbilityState == 4) {
+        if(wAbilityState == wAS.BigShield) {
             BigShield.SetActive(true);
         }
-
-        // UI tie-in (gold bar that goes around ability)
     }
 }

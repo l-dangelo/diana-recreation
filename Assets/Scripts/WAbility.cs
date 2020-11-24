@@ -56,6 +56,8 @@ public class WAbility : MonoBehaviour
         PaleCascade();
 
         yield return new WaitForSeconds(5);
+        
+        cooldown.gameObject.SetActive(true);
 
         StopCascading();
 
@@ -76,14 +78,13 @@ public class WAbility : MonoBehaviour
 
     void StopCascading()
     {
+
         orb1.SetActive(false);
         orb2.SetActive(false);
         orb3.SetActive(false);
         BigShield.SetActive(false);
 
         wAbilityState = wAS.OnCooldown;
-
-        cooldown.gameObject.SetActive(true);
 
         Diana.SetShieldHealth(0);
 
